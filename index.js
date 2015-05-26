@@ -82,6 +82,10 @@ const dekuComponent = spec => {
 		},
 		beforeUnmount (component, el) {
 			const {props, state, id} = component
+			element.end(true)
+			state.end(true)
+			props.end(true)
+			events.end(true)
 		}
 	}
 };
