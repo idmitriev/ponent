@@ -1,0 +1,29 @@
+{
+  "name": "ponent",
+  "version": "0.0.1",
+  "description": "Yet another functional UI lib",
+  "main": "ponent.js",
+  "scripts": {
+    "demos": "browserify demos/example.js --outfile demos/app.js && open demos/index.html",
+    "compile": "babel index.js -o ponent.js",
+    "prepublish": "npm run compile"
+  },
+  "author": "Ivan Dmitriev <iam@ivandmitriev.com>",
+  "license": "MIT",
+  "dependencies": {
+    "deku": "^0.2.15",
+    "flyd": "^0.1.4",
+    "flyd-filter": "^1.0.2",
+    "flyd-obj": "^0.1.0",
+    "ramda": "^0.13.0"
+  },
+  "devDependencies": {
+    "babel": "^5.4.7",
+    "babelify": "^6.0.2"
+  },
+  "browserify": {
+    "transform": [
+      "babelify"
+    ]
+  }
+}
