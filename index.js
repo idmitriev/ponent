@@ -90,7 +90,8 @@ const dekuComponent = spec => {
 	}
 };
 
-const startsWith = (needle, haystack) => substringTo(needle.length, haystack) === needle;
+const startsWith = (needle, haystack) =>
+	substringTo(needle.length, haystack) === needle;
 
 const injectEventHandlers = curry(
 	(events, props)  =>
