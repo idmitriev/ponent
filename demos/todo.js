@@ -1,41 +1,105 @@
 const 
 	{ scan } = require('flyd'),
-	{ map, prop, assoc, append, filter } = require('ramda'),
+	{ map, prop, assoc, append, filter, compose, curry, identity } = require('ramda'),
 	{ component } = require('../index'),
-	{li, input, ul, div, button} = require('../index').html;
+	{ li, input, ul, div, button, span } = require('../index').html;
 
-const match = (value, dispatchers) =>
-	(dispatchers[value] || dispatchers.default || (() => undefined))()	
+const match = (value, args, matchers) =>
+	(matchers[value] || matchers.default || (() => undefined)).apply(null, args || [])	
 
-const remove = (item, list) =>
-	filter(i => i !== item, list)
+const remove = curry((item, list) =>
+	filter(i => i !== item, list))
+
+const modifyItems = curry((action, state) =>
+	assoc(
+		'items',
+		action(state.items),
+		state
+	))
+
+const modifyItem = curry((action, itemToModify, state) =>
+	modifyItems(		
+		map(item => item === itemToModify 
+			? action(item)
+			: item
+		),
+		state
+	))
+
+const update = (state, event) =>
+	match(event.action, [state], {
+		input: assoc('new', event.text),
+		add: compose(
+			modifyItems(append(event.item)),
+			assoc('new', '')
+		),
+		remove: modifyItems(remove(event.item)),
+		edit: modifyItem(
+			assoc('text', event.text), 
+			event.item
+		),
+		startEditing: modifyItem(
+			assoc('editing', true), 
+			event.item
+		),
+		endEditing: modifyItem(
+			assoc('editing', false), 
+			event.item
+		),
+		toggle: modifyItem(
+			assoc('done', event.item && !event.item.done),
+			event.item
+		),
+		default: identity
+	})
 
 const todo = item => 
 	li({}, [
 		input({
 			type: 'checkbox',
-			checked: item.done ? 'checked' : null
+			checked: item.done ? 'checked' : null,
+			onChange: { action: 'toggle', item }
 		}),
-		item.text,
+		item.editing 
+			? input({
+				type: 'text',
+				value: item.text, 
+				onBlur: { action: 'endEditing', item },
+				onInput: event => ({
+					action: 'edit',
+					item,
+					text: event.target.value
+				}),
+				onKeyDown: event => 
+					event.keyCode === 13 || event.keyCode === 27
+						? { action: 'endEditing', item }
+						: { action: 'nop' },
+			})
+			: span(
+				{ onDoubleClick: { action: 'startEditing', item }},
+				 item.text
+			 ),
 		button(
 			{ onClick: { action: 'remove',  item }},
-			'x'
+			'delete'
 		)
 	])
 
-const todos = state => 
+const todos = state => !console.log(state) && 
 	div({}, [
 		input({
 			type: 'text',
 			onKeyDown: event => 
-				event.keyCode == 13
-				? ({
-					action: 'add',
-					item: { text: event.target.value }
-				})
-				: ({
+				event.keyCode === 13
+					? ({
+						action: 'add',
+						item: { text: event.target.value }
+					})
+					: { action: 'nop' },
+			onInput: event => 
+				({
 					action: 'input',
-					text: event.target.value + String.fromCharCode(event.keyCode)
+					text: event.target.value
 				}),
 			value: state.new
 		}),
@@ -44,35 +108,12 @@ const todos = state =>
 		)
 	])
 
-const update = (state, event) =>
-	match(event.action, {
-		input: () => 
-			assoc(
-				'new',
-				event.text,
-				state
-			),
-		add: () => 
-			assoc(
-				'items',
-				append(event.item, state.items),
-				assoc(
-					'new',
-					'',
-					state
-				)
-			),
-		remove: () => 
-			assoc(
-				'items', 
-				remove(event.item, state.items),
-				state
-			),
-		default: () => state
-	})
-
 export default component({
+	element: todos,
 	state: (props, events) =>
-		scan(update, { items: []}, events),
-	element: todos
+		scan(
+			update,
+			{ items: [] },
+			events
+		),
 })
