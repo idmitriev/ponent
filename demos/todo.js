@@ -1,5 +1,5 @@
 const 
-	{ scan } = require('flyd'),
+	{ stream, merge, scan } = require('../index').stream,
 	{ map, prop, assoc, append, filter, compose, curry, identity } = require('ramda'),
 	{ component } = require('../index'),
 	{ li, input, ul, div, button, span } = require('../index').html;
@@ -29,6 +29,7 @@ const modifyItem = curry((action, itemToModify, state) =>
 const update = (state, event) =>
 	match(event.action, [state], {
 		input: assoc('new', event.text),
+		clear: assoc('new', ''),
 		add: compose(
 			modifyItems(append(event.item)),
 			assoc('new', '')
@@ -80,7 +81,7 @@ const todo = item =>
 				 item.text
 			 ),
 		button(
-			{ onClick: { action: 'remove',  item }},
+			{ onClick: { action: 'remove',  item } },
 			'delete'
 		)
 	])
@@ -95,7 +96,9 @@ const todos = state => !console.log(state) &&
 						action: 'add',
 						item: { text: event.target.value }
 					})
-					: { action: 'nop' },
+					: event.keyCode === 27
+						? { action: 'clear'}
+						: { action: 'nop' },
 			onInput: event => 
 				({
 					action: 'input',
@@ -108,12 +111,16 @@ const todos = state => !console.log(state) &&
 		)
 	])
 
+// amok
+const source = stream({});
+window.addEventListener('source', source);
+
 export default component({
 	element: todos,
 	state: (props, events) =>
 		scan(
-			update,
+			update, 
 			{ items: [] },
-			events
+			merge(events, source)
 		),
 })

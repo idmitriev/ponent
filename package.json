@@ -4,7 +4,7 @@
   "description": "Yet another functional UI lib",
   "main": "ponent.js",
   "scripts": {
-    "demos": "browserify demos/example.js --outfile demos/app.js && open demos/index.html",
+    "demos": "browserify demos/index.js --outfile demos/app.js && open demos/index.html",
     "compile": "babel index.js -o ponent.js",
     "prepublish": "npm run compile"
   },

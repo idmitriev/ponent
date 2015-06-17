@@ -1,5 +1,6 @@
 const
-	{ stream: Stream, map: mapStream, isStream } = require('flyd'),
+	flyd = require('flyd'),
+	{ stream: Stream, map: mapStream, isStream } = flyd,
 	StreamObj = require('flyd-obj').stream,
 	{ is, isNil, curry, curryN, map, nAry, mapObjIndexed, substringTo, reduce, merge} = require('ramda'),
 	deku = require('deku'),
@@ -91,7 +92,7 @@ const dekuComponent = spec => {
 };
 
 const startsWith = (needle, haystack) =>
-	substringTo(needle.length, haystack) === needle;
+substringTo(needle.length, haystack) === needle;
 
 const injectEventHandlers = curry(
 	(events, props)  =>
@@ -139,6 +140,8 @@ export default (element, domNode) =>
 	dekuRender(tree(render({}, element)), domNode);
 
 export const component = element;
+
+export const stream = flyd; 
 
 export const html = reduce(
 	(acc, tag) => {
