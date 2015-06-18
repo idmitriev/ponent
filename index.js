@@ -2,7 +2,7 @@ const
 	flyd = require('flyd'),
 	{ stream: Stream, map: mapStream, isStream } = flyd,
 	StreamObj = require('flyd-obj').stream,
-	{ is, isNil, curry, curryN, map, nAry, mapObjIndexed, substringTo, reduce, merge} = require('ramda'),
+	{ is, isNil, curry, curryN, map, nAry, mapObjIndexed, substringTo, reduce, merge, omit } = require('ramda'),
 	deku = require('deku'),
 	{ tree, render: dekuRender, element: dekuElement } = deku;
 
@@ -128,9 +128,14 @@ const render = curry(
 							is(String, type)
 								? type
 								: dekuComponent(type),
-							events != null && props != null
-								? injectEventHandlers(events, props)
-								: props,
+							omit(
+								is(String, type) 
+									? ['children']
+									: [],
+								events != null && props != null
+									? injectEventHandlers(events, props)
+									: props
+							),
 							render(context, children)
 						);
 	}

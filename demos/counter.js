@@ -1,6 +1,6 @@
 const
 	{ component } = require('../index'),
-	{ eq } = require('ramda'),
+	{ equals } = require('ramda'),
 	{ scan } = require('flyd'),
 	filter = require('flyd-filter'),
 	{ button } = require('../index').html;
@@ -10,7 +10,7 @@ export default component({
 		text: scan(
 			(clicks, _) => clicks + 1,
 			0,
-			filter(eq('click'), events)
+			filter(equals('click'), events)
 		)
 	}),
 	element: state => button({
