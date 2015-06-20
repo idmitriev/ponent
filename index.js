@@ -1,6 +1,6 @@
 const
 	flyd = require('flyd'),
-	{ stream: Stream, map: mapStream, isStream } = flyd,
+	{ stream: Stream, map: mapStream, isStream, on } = flyd,
 	StreamObj = require('flyd-obj').stream,
 	{ is, isNil, curry, curryN, map, nAry, mapObjIndexed, substringTo, reduce, merge, omit } = require('ramda'),
 	deku = require('deku'),
@@ -26,10 +26,12 @@ const element = curryN(
 	(type, props, children) => ({
 		type: type || 'div',
 		props: merge(
-			props || {},
-			isNil(children) 
-				? {}
-				: { children }
+			!isNil(props) && isStream(props)
+				? { _stream: props }
+				: props || {},
+			!isNil(children)
+				? { children }
+				: {}
 		)
 	})
 );
@@ -51,8 +53,12 @@ const dekuComponent = spec => {
 		initialState: spec.initialState,
 		defaultProps: spec.defaultProps,
 		beforeMount(component) {
-			const { props: initialProps, state, id} = component;
-			props(initialProps);
+			const { props: initialProps, state, id } = component;
+			if (initialProps._stream != null && isStream(initialProps._stream)){
+				on(props, initialProps._stream);
+			} else {
+				props(initialProps)
+			}
 		},
 		shouldUpdate(){
 			return true;
@@ -62,7 +68,11 @@ const dekuComponent = spec => {
 		},
 		beforeUpdate (component, nextProps, nextState) {
 			//const {props, state, id} = component
-			props(nextProps)
+			if (nextProps._stream != null && isStream(nextProps._stream)){ //TODO check if already plugged
+				on(props, nextProps._stream);
+			} else {
+				props(nextProps)
+			}
 		},
 		render(component, setState){
 			//const {props, state, id} = component
