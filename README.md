@@ -1,6 +1,14 @@
 # ponent
 Yet another functional UI library
 
+## Demos
+
+```bash
+npm run demos
+```
+
+### Counter button
+
 ```js
 
 const
