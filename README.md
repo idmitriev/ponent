@@ -12,8 +12,9 @@ npm run demos
 ```js
 
 const
-	{ component } = require('ponent'),
-	{ eq } = require('ramda'),
+	render = require('ponent'),
+	{ component } = render,
+	{ equals } = require('ramda'),
 	{ scan } = require('flyd'),
 	filter = require('flyd-filter'),
 	{ button } = require('ponent').html;
@@ -23,7 +24,7 @@ const counterButton = component({
 		text: scan(
 			clicks => clicks + 1,
 			0,
-			filter(eq('click'), events)
+			filter(equals('click'), events)
 		)
 	}),
 	element: state => 
