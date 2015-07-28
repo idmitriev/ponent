@@ -2,7 +2,7 @@ const
 	flyd = require('flyd'),
 	{ stream: Stream, map: mapStream, isStream, on } = flyd,
 	StreamObj = require('flyd-obj').stream,
-	{ is, isNil, curry, curryN, map, nAry, mapObjIndexed, substringTo, reduce, merge, omit } = require('ramda'),
+	{ is, isNil, curry, curryN, map, nAry, mapObjIndexed, reduce, merge, omit, identity } = require('ramda'),
 	deku = require('deku'),
 	{ tree, render: dekuRender, element: dekuElement } = deku;
 
@@ -11,7 +11,7 @@ const
 	Props = Stream,
 	State = curry(
 		(stateSpec, events, props) => {
-			const 
+			const
 				state = stateSpec(props, events);
 
 			return isStream(state)
@@ -25,95 +25,97 @@ const element = curryN(
 	2,
 	(type, props, children) => ({
 		type: type || 'div',
-		props: merge(
-			!isNil(props) && isStream(props)
-				? { _stream: props }
-				: props || {},
-			!isNil(children)
-				? { children }
-				: {}
-		)
+		props: isNil(children) && !isStream(props)
+			? props || {}
+			: merge(
+				!isNil(props) && isStream(props)
+					? { _stream: props }
+					: props || {},
+				!isNil(children)
+					? { children }
+					: {}
+			)
 	})
 );
 
-const dekuComponent = spec => {
-	const
-		events = Events(),
-		props = Props(),
-		state = State(spec.state, events, props),
-		element = Element(spec.element, state);
+const dekuComponent = spec => ({
+	name: spec.name || 'component',
+	defaultProps: spec.defaultProps,
+	beforeMount(component) {
+		const { props: initialProps, state, id } = component;
 
-	let stateMapped = false;
+		state.events = Events(),
+		state.props = Props(initialProps),
+		state.state = State(spec.state, state.events, state.props),
+		state.element = Element(spec.element, state.state);
 
-	return {
-		props,
-		state,
-		events,
-		name: spec.name || 'component',
-		initialState: spec.initialState,
-		defaultProps: spec.defaultProps,
-		beforeMount(component) {
-			const { props: initialProps, state, id } = component;
-			if (initialProps._stream != null && isStream(initialProps._stream)){
-				on(props, initialProps._stream);
-			} else {
-				props(initialProps)
-			}
-		},
-		shouldUpdate(){
-			return true;
-		},
-		beforeRender (component) {
-			const {props, state, id} = component
-		},
-		beforeUpdate (component, nextProps, nextState) {
-			//const {props, state, id} = component
-			if (nextProps._stream != null && isStream(nextProps._stream)){ //TODO check if already plugged
-				on(props, nextProps._stream);
-			} else {
-				props(nextProps)
-			}
-		},
-		render(component, setState){
-			//const {props, state, id} = component
-			if ( !stateMapped ){
-				mapStream(setState, state);
-				stateMapped = true;
-			}
-			return render(this, element());
-		},
-		afterRender (component, el) {
-			const {props, state, id} = component
-		},
-		afterUpdate (component, prevProps, prevState, setState) {
-			const {props, state, id} = component
-		},
-		afterMount (component, el, setState) {
-			const {props, state, id} = component
-		},
-		beforeUnmount (component, el) {
-			const {props, state, id} = component
-			element.end(true)
-			state.end(true)
-			props.end(true)
-			events.end(true)
+		// if (initialProps.context && initialProps.context.events){
+		// 	on((spec.events || identity)(initialProps.context.events), state.events);
+		// }
+
+		// if (initialProps._stream != null && isStream(initialProps._stream)){
+		// 	on(state.props, initialProps._stream);
+		// } 
+	},
+	shouldUpdate() {
+		return true;
+	},
+	beforeRender (component) {
+		const {props, state, id} = component
+	},
+	beforeUpdate (component, nextProps, nextState) {
+		const {props, state, id} = component
+		if (nextProps._stream != null && isStream(nextProps._stream)){ //TODO check if already plugged
+			on(state.props, nextProps._stream);
+		} else {
+			state.props(nextProps)
 		}
+	},
+	render(component, setState) {
+		const {props, state, id} = component
+		if ( !state.stateMapped && state.state ){
+			mapStream(
+				newState => setState(state),
+				state.state
+			);
+			state.stateMapped = true;
+		}
+		return render(state, state.element());
+	},
+	afterRender (component, el) {
+		const {props, state, id} = component
+	},
+	afterUpdate (component, prevProps, prevState, setState) {
+		const {props, state, id} = component
+	},
+	afterMount (component, el, setState) {
+		const {props, state, id} = component
+	},
+	beforeUnmount (component, el) {
+		const { state } = component;
+		state.element.end(true)
+		state.state.end(true)
+		state.props.end(true)
+		state.events.end(true)
 	}
-};
+})
 
 const startsWith = (needle, haystack) =>
-substringTo(needle.length, haystack) === needle;
+	haystack.indexOf(needle) === 0
 
 const injectEventHandlers = curry(
 	(events, props)  =>
 		mapObjIndexed(
 			(value, key) =>
 				startsWith('on', key)
-					? event => events(
-						is(Function, value)
-							? value(event)
-							: value
-					)
+					? event => {
+						events(
+							is(Function, value)
+								? value(event)
+								: value
+						)
+						return false;
+					}
 					: value,
 			props
 		)
@@ -128,18 +130,16 @@ const render = curry(
 
 		return is(String, element) || isNil(element)
 			? element
-			: is(Number, element) 
+			: is(Number, element)
 				? element.toString()
 				: is(Array, element)
 					? map(render(context), element)
 					: is(Function, type)
 						? render(context, type(props))
 						: dekuElement(
-							is(String, type)
-								? type
-								: dekuComponent(type),
+							type,
 							omit(
-								is(String, type) 
+								is(String, type)
 									? ['children']
 									: [],
 								events != null && props != null
@@ -154,9 +154,10 @@ const render = curry(
 export default (element, domNode) =>
 	dekuRender(tree(render({}, element)), domNode);
 
-export const component = element;
+export const component = spec =>
+	element(dekuComponent(spec));
 
-export const stream = flyd; 
+export const stream = merge(flyd, { streamObject: StreamObj });
 
 export const html = reduce(
 	(acc, tag) => {
