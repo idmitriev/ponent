@@ -1,6 +1,6 @@
 {
   "name": "ponent",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Yet another functional UI lib",
   "main": "ponent.js",
   "scripts": {
