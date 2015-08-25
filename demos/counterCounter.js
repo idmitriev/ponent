@@ -2,7 +2,7 @@ const
     { map, range } = require('ramda'),
     { component } = require('../index'),
     { div, ul, li } = require('../index').html,
-    { pick, compose, is, prop } = require('ramda'),
+    { pick, compose, is, prop, propEq } = require('ramda'),
     { map: mapStream, merge } = require('flyd'),
     filter = require('flyd-filter'),
     dropRepeats = require('flyd-droprepeats').dropRepeats;
@@ -18,7 +18,7 @@ export default component({
                     dropRepeats(mapStream(prop('count'), props)),
                     mapStream(
                         prop('count'),
-                        filter(e => e.id === 'mainCounter', events)
+                        filter(propEq('id', 'mainCounter'), events)
                     )
                 )
             )
