@@ -1,5 +1,5 @@
 const 
-	{ stream, merge, scan } = require('../index').stream,
+	{ stream, merge, scan } = require('flyd'),
 	{ map, prop, assoc, append, filter, compose, curry, identity } = require('ramda'),
 	{ component } = require('../index'),
 	{ li, input, ul, div, button, span } = require('../index').html;
@@ -86,7 +86,7 @@ const todo = item =>
 		)
 	])
 
-const todos = state => !console.log(state) && 
+const todos = state =>
 	div({}, [
 		input({
 			type: 'text',

@@ -11,14 +11,17 @@
   "author": "Ivan Dmitriev <iam@ivandmitriev.com>",
   "license": "MIT",
   "dependencies": {
-    "deku": "^0.4.11",
+    "deku": "^0.5.4",
     "flyd": "^0.1.12",
+    "flyd-droprepeats": "^2.0.0",
     "flyd-filter": "^1.0.2",
+    "flyd-forwardto": "0.0.2",
     "flyd-obj": "^0.1.0",
-    "ramda": "^0.17.1"
+    "ramda": "^0.17.1",
+    "virtual-element": "^1.1.2"
   },
   "devDependencies": {
-    "babel": "^5.5.12",
+    "babel": "^5.5.21",
     "babelify": "^6.1.2"
   },
   "browserify": {
